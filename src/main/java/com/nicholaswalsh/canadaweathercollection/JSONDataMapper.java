@@ -5,17 +5,19 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JSONDataMapper {
-
-    List<StationObs<Station, Observation>> list = new ArrayList<>();
 
     public JSONDataMapper() {
 
     }
 
-    public List<StationObs<Station, Observation>> mapJSONData(final String json) {
+    public List<Observation> mapJSONData(final String json) {
+        List<Observation> list = new ArrayList<>();
+        Map<String, Station> stationMap = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
 
         JsonNode node = mapper.readTree(json);
@@ -35,11 +37,18 @@ public class JSONDataMapper {
             Double humidity = asDouble(propertiesNode, "rel_hum");
             Double avgWindSpeed = asDouble(propertiesNode, "avg_wnd_spd_10m_pst1mt");
 
-            Station station = new Station();
-            station.setStationID(stationID);
-            station.setStationName(stationName);
-            station.setLongitude(longitude);
-            station.setLatitude(latitude);
+            Station station;
+            if (stationMap.containsKey(stationID)) {
+                station = stationMap.get(stationID);
+            }
+            else {
+                station = new Station();
+                station.setStationID(stationID);
+                station.setStationName(stationName);
+                station.setLongitude(longitude);
+                station.setLatitude(latitude);
+                stationMap.put(stationID, station);
+            }
 
             ObservationId observationId = new ObservationId(stationID, obsDateTime);
 
@@ -50,7 +59,7 @@ public class JSONDataMapper {
             observation.setHumidity(humidity);
             observation.setAvgWindSpeed(avgWindSpeed);
 
-            list.add(new StationObs<>(station, observation));
+            list.add(observation);
         }
 
         return list;
@@ -58,13 +67,10 @@ public class JSONDataMapper {
 
     private Double asDouble(final JsonNode node, final String fieldName) {
         if (node.path(fieldName).isMissingNode() || node.path(fieldName).isNull()) {
-            Double value = null;
-            return value;
+            return null;
         }
         else {
             return node.path(fieldName).asDouble();
         }
     }
-
-    public record StationObs<Station, Observation>(Station station, Observation obs) {}
 }

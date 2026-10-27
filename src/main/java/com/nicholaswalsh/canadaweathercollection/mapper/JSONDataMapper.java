@@ -1,5 +1,8 @@
-package com.nicholaswalsh.canadaweathercollection;
+package com.nicholaswalsh.canadaweathercollection.mapper;
 
+import com.nicholaswalsh.canadaweathercollection.model.Observation;
+import com.nicholaswalsh.canadaweathercollection.model.ObservationId;
+import com.nicholaswalsh.canadaweathercollection.model.Station;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 

@@ -1,4 +1,4 @@
-package com.nicholaswalsh.canadaweathercollection;
+package com.nicholaswalsh.canadaweathercollection.model;
 
 import jakarta.persistence.*;
 

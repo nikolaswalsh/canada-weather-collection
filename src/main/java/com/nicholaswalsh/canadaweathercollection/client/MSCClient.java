@@ -1,7 +1,6 @@
-package com.nicholaswalsh.canadaweathercollection;
+package com.nicholaswalsh.canadaweathercollection.client;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 

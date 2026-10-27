@@ -1,5 +1,11 @@
-package com.nicholaswalsh.canadaweathercollection;
+package com.nicholaswalsh.canadaweathercollection.service;
 
+import com.nicholaswalsh.canadaweathercollection.model.Observation;
+import com.nicholaswalsh.canadaweathercollection.model.Station;
+import com.nicholaswalsh.canadaweathercollection.client.MSCClient;
+import com.nicholaswalsh.canadaweathercollection.mapper.JSONDataMapper;
+import com.nicholaswalsh.canadaweathercollection.repository.ObservationRepository;
+import com.nicholaswalsh.canadaweathercollection.repository.StationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +35,10 @@ public class IngestionService {
 
         JSONDataMapper mapper = new JSONDataMapper();
         List<Observation> mappedData = mapper.mapJSONData(response);
+        if (mappedData.isEmpty()) {
+            return;
+        }
+
         Set<Station> stations = new HashSet<>();
 
         for (Observation  observation : mappedData) {

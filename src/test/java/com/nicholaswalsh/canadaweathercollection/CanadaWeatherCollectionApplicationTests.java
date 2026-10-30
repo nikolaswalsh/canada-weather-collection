@@ -8,7 +8,6 @@ class CanadaWeatherCollectionApplicationTests {
 
     @Test
     void contextLoads() {
-        System.out.println("DB_URL=[" + System.getenv("DB_URL") + "]");
     }
 
 }

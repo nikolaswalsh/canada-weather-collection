@@ -9,8 +9,11 @@ import com.nicholaswalsh.canadaweathercollection.repository.StationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -31,24 +34,37 @@ public class IngestionService {
 
     @Transactional
     public void ingest() {
-        final String response = client.getObservations();
+        int offset = 0;
+        boolean newPagesExist = true;
+        Optional<Instant> latestTimeOpt = observationRepository.findLatestObservationTime();
+        Instant latestTime = latestTimeOpt.orElse(Instant.now().minus(1, ChronoUnit.HOURS));
 
-        JSONDataMapper mapper = new JSONDataMapper();
-        List<Observation> mappedData = mapper.mapJSONData(response);
-        if (mappedData.isEmpty()) {
-            return;
+        while (newPagesExist) {
+            final String response = client.getObservations(latestTime, offset);
+            JSONDataMapper mapper = new JSONDataMapper();
+            JSONDataMapper.MappedPage mappedPage = mapper.mapJSONData(response);
+            List<Observation> mappedData = mappedPage.observations();
+            if (mappedData.isEmpty()) {
+                return;
+            }
+            if (offset + mappedPage.returned() < mappedPage.matched()) {
+                offset += mappedPage.returned();
+            }
+            else {
+                newPagesExist = false;
+            }
+
+            Set<Station> stations = new HashSet<>();
+
+            for (Observation observation : mappedData) {
+                Station station = observation.getStation();
+                stations.add(station);
+            }
+
+            stationRepository.saveAll(stations);
+
+            observationRepository.saveAll(mappedData);
         }
-
-        Set<Station> stations = new HashSet<>();
-
-        for (Observation  observation : mappedData) {
-            Station station = observation.getStation();
-            stations.add(station);
-        }
-
-        stationRepository.saveAll(stations);
-
-        observationRepository.saveAll(mappedData);
     }
 
 }

@@ -17,7 +17,9 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -53,7 +55,10 @@ public class IngestionServiceTest {
         Resource resource = new ClassPathResource(testFile);
         final String json = resource.getContentAsString(StandardCharsets.UTF_8);
 
-        when(client.getObservations()).thenReturn(json);
+        int offset = 0;
+        Instant latestTime = Instant.parse("2026-11-01T20:00:00Z");
+        when(observationRepository.findLatestObservationTime()).thenReturn(Optional.of(latestTime));
+        when(client.getObservations(latestTime, offset)).thenReturn(json);
 
         service.ingest();
 
@@ -65,11 +70,16 @@ public class IngestionServiceTest {
     }
 
     @Test
-    void ingestEmptyStationsAndObservations() throws IOException {
-        when(client.getObservations()).thenReturn("{\"type\": \"FeatureCollection\",\"features\": []}");
+    void ingestEmptyStationsAndObservations() {
+        int offset = 0;
+        Instant latestTime = Instant.parse("2026-11-01T20:00:00Z");
+        when(observationRepository.findLatestObservationTime()).thenReturn(Optional.of(latestTime));
+
+        when(client.getObservations(latestTime, offset)).thenReturn("{\"type\": \"FeatureCollection\",\"features\": []}");
 
         service.ingest();
 
-        verifyNoInteractions(stationRepository, observationRepository);
+        verify(stationRepository, never()).saveAll(any());
+        verify(observationRepository, never()).saveAll(any());
     }
 }

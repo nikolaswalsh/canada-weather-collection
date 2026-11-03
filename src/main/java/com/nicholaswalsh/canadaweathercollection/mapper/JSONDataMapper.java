@@ -18,12 +18,15 @@ public class JSONDataMapper {
 
     }
 
-    public List<Observation> mapJSONData(final String json) {
+    public MappedPage mapJSONData(final String json) {
         List<Observation> list = new ArrayList<>();
         Map<String, Station> stationMap = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
 
         JsonNode node = mapper.readTree(json);
+
+        final int matched = node.path("numberMatched").asInt();
+        final int returned = node.path("numberReturned").asInt();
 
         for (JsonNode featureNode : node.path("features")) {
             JsonNode geometryNode = featureNode.path("geometry");
@@ -65,7 +68,7 @@ public class JSONDataMapper {
             list.add(observation);
         }
 
-        return list;
+        return new MappedPage(list, matched, returned);
     }
 
     private Double asDouble(final JsonNode node, final String fieldName) {
@@ -76,4 +79,6 @@ public class JSONDataMapper {
             return node.path(fieldName).asDouble();
         }
     }
+
+    public record MappedPage(List<Observation> observations, int matched, int returned) {}
 }

@@ -21,7 +21,8 @@ public class JSONDataMapperTest {
         Resource resource = new ClassPathResource(testFile);
 
         JSONDataMapper dataMapper = new JSONDataMapper();
-        List<Observation> observationList = dataMapper.mapJSONData(resource.getContentAsString(StandardCharsets.UTF_8));
+        JSONDataMapper.MappedPage mappedPage = dataMapper.mapJSONData(resource.getContentAsString(StandardCharsets.UTF_8));
+        List<Observation> observationList = mappedPage.observations();
 
         assertEquals(5, observationList.size());
 

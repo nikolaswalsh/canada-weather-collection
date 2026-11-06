@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -81,5 +82,39 @@ public class IngestionServiceTest {
 
         verify(stationRepository, never()).saveAll(any());
         verify(observationRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void ingestPagesStationsAndObservations() throws IOException {
+        final String testFile1 = "swob-page1.json";
+        final String testFile2 = "swob-page2.json";
+        Resource resource1 = new ClassPathResource(testFile1);
+        Resource resource2 = new ClassPathResource(testFile2);
+        final String json1 = resource1.getContentAsString(StandardCharsets.UTF_8);
+        final String json2 = resource2.getContentAsString(StandardCharsets.UTF_8);
+
+        int offset1 = 0;
+        int offset2 = 2;
+        Instant latestTime = Instant.parse("2026-11-01T20:00:00Z");
+        when(observationRepository.findLatestObservationTime()).thenReturn(Optional.of(latestTime));
+
+        when(client.getObservations(latestTime, offset1)).thenReturn(json1);
+        when(client.getObservations(latestTime, offset2)).thenReturn(json2);
+
+        service.ingest();
+
+        verify(stationRepository, times(2)).saveAll(stationCaptor.capture());
+        List<Collection<Station>> capturedStations = stationCaptor.getAllValues();
+        assertEquals(2, capturedStations.get(0).size());
+        assertEquals(1, capturedStations.get(1).size());
+
+        verify(observationRepository, times(2)).saveAll(observationCaptor.capture());
+        List<Collection<Observation>> capturedObservations = observationCaptor.getAllValues();
+        assertEquals(2, capturedObservations.get(0).size());
+        assertEquals(1, capturedObservations.get(1).size());
+
+        verify(client).getObservations(latestTime, 0);
+        verify(client).getObservations(latestTime, 2);
+        verifyNoMoreInteractions(client);
     }
 }
